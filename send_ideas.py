@@ -1,9 +1,8 @@
 import anthropic
-import smtplib
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.header import Header
+import ssl
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime
 
 
@@ -16,7 +15,7 @@ def generate_ideas():
         messages=[
             {
                 "role": "user",
-                "content": f"You are the chief editor of SIDE B, an Instagram magazine. Today is {today}. Generate 20 Instagram carousel post ideas in Korean, 5 each for these categories: clothing/fashion, hotplaces/cafes, vintage tech, music. Format each as: Number.[Category] Title / Hook / Why save / Slide count"
+                "content": f"You are the chief editor of SIDE B, a Korean Instagram magazine. Today is {today}. Generate 20 Instagram carousel post ideas in Korean. 5 ideas each for: clothing/fashion, hotplaces/cafes, vintage tech, music. Format each: Number.[Category] Title / Hook sentence / Why save / Number of slides"
             }
         ]
     )
@@ -28,11 +27,6 @@ def send_email(ideas_text):
     password = os.environ["GMAIL_APP_PASSWORD"]
     receiver = "howngyun@gmail.com"
     today = datetime.now().strftime("%Y-%m-%d")
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = Header(f"[SIDE B] {today} Daily Ideas 20", "utf-8")
-    msg["From"] = sender
-    msg["To"] = receiver
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -47,12 +41,17 @@ def send_email(ideas_text):
 </body>
 </html>"""
 
-    part = MIMEText(html, "html", "utf-8")
-    msg.attach(part)
+    msg = EmailMessage()
+    msg["Subject"] = f"[SIDE B] {today} Daily Ideas 20"
+    msg["From"] = sender
+    msg["To"] = receiver
+    msg.set_content("Please view this email in HTML format.")
+    msg.add_alternative(html, subtype="html")
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(sender, password)
-        server.sendmail(sender, receiver, msg.as_string())
+        server.send_message(msg)
 
     print(f"Done: {today}")
 
