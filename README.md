@@ -1,1 +1,0 @@
-# sideb-daily-ideas
