@@ -1,0 +1,36 @@
+name: DIGOUT — 기획안 생성
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: '기획할 주제를 입력하세요 (예: 이번 달 내한공연 정리, 필름카메라 입문 추천)'
+        required: true
+        type: string
+
+jobs:
+  generate-content-plan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 레포 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치
+        run: |
+          pip install anthropic
+
+      - name: 기획안 생성 & 이메일 발송
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER:        ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PW:      ${{ secrets.GMAIL_APP_PW }}
+          TO_EMAIL:          ${{ secrets.TO_EMAIL }}
+          TOPIC:             ${{ github.event.inputs.topic }}
+        run: |
+          python scripts/content_planner.py
